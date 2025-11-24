@@ -14,4 +14,8 @@ export class UpdatePostDto {
     @IsBoolean()
     @IsOptional()
     status?: boolean;
+
+    @IsString()
+    @IsOptional()
+    slug?: string;
 }

@@ -208,7 +208,7 @@ export class PostsService {
 
         if (user.role !== 'admin' && user.role !== 'moderator' && post.userId.toString() !== userId) throw new UnauthorizedException('You are not authorized to update this post');
 
-        if (updatePostDto.title && updatePostDto.title !== post.title) post.slug = await this.createUniqueSlug(updatePostDto.title);
+        if (updatePostDto.title && updatePostDto.title !== post.title) post.slug = updatePostDto.slug = await this.createUniqueSlug(updatePostDto.title);
 
         const updatedPost = await this.postModel.findByIdAndUpdate(post._id, updatePostDto, { new: true }).exec();
 

@@ -191,6 +191,8 @@ export class TopicsService {
             throw new ForbiddenException('You do not have permission to update this topic.');
         }
 
+        if (updateTopicDto.title && updateTopicDto.title !== topic.title) topic.slug = updateTopicDto.slug = await this.createUniqueSlug(updateTopicDto.title);
+
         const updatedTopic = await this.topicSchema.findOneAndUpdate({ _id: topic.id }, updateTopicDto, { new: true }).exec();
 
         if (!updatedTopic) {

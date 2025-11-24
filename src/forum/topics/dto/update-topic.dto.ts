@@ -27,4 +27,8 @@ export class UpdateTopicDto {
     @IsBoolean()
     @IsOptional()
     status?: boolean;
+
+    @IsString()
+    @IsOptional()
+    slug?: string;
 }
