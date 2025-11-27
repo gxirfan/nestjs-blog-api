@@ -30,8 +30,6 @@ export class UserController {
     @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
     @ResponseMessage('Password updated successfully.')
     async updatePassword(@Request() req, @Body() user: updateUserDto.UpdateUserPasswordDto): Promise<IUserResponse> {
-        console.log(user.oldPassword);
-        console.log(user.newPassword);
         return await this.userService.updatePassword(req.user.id, user);
     }
 }

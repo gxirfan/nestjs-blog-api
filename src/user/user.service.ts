@@ -158,7 +158,6 @@ export class UserService {
         if (!foundUser) {
             throw new NotFoundException('User not found');
         }
-        console.log(user);
         
         const isMatch = await this.comparePassword(user.oldPassword, foundUser.passwordHash);
         if (!isMatch) {

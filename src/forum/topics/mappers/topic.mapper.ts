@@ -24,6 +24,7 @@ export class TopicMapper {
                 tagDescription: tag.description,
                 
                 viewCount: topicObject.viewCount,
+                postCount: topicObject.postCount,
 
                 userId: author.id,
                 authorUsername: author.username,
@@ -32,7 +33,6 @@ export class TopicMapper {
                 authorRole: author.role,
                 author: `${author.firstName} ${author.lastName}`,
                 lastPostAt: topicObject.lastPostAt.toISOString(),
-                postCount: topicObject.postCount,
                 createdAt: topicObject.createdAt.toISOString(),
                 updatedAt: topicObject.updatedAt.toISOString(),
                 status: topicObject.status,

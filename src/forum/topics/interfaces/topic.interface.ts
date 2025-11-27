@@ -8,5 +8,6 @@ export interface ITopic extends IAuditFields {
     tagId: string;
     userId: string;
     viewCount: number;
+    postCount: number;
     status: boolean;
 }

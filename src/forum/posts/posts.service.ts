@@ -54,12 +54,13 @@ export class PostsService {
 
         const savedPost = await post.save();
 
-        if (savedPost && savedPost.parentId) {
-            await this.updateLastPostAt(savedPost.parentId);
-            await this.updatePostCount(savedPost.parentId);
+        if (savedPost && savedPost.topicId) {
+            await this.updateLastPostAt(savedPost.topicId);
+            await this.updatePostCount(savedPost.topicId);
 
+            const count = await this.countDocumentsByTopicId(savedPost.topicId);
             await this.topicService.updateLastPostAt(savedPost.topicId);
-            await this.topicService.updatePostCount(savedPost.topicId, await this.countDocumentsByTopicId(savedPost.topicId));
+            await this.topicService.updatePostCount(savedPost.topicId, count);
         }
 
         return savedPost;

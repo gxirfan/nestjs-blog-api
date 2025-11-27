@@ -105,7 +105,6 @@ export class AuthController {
                     createdAt: rawUser.createdAt,
                     updatedAt: rawUser.updatedAt,
                 };
-                console.log(cleanUserResponse);
             return { 
                 statusCode: HttpStatus.OK,
                 success: true,
