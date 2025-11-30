@@ -6,4 +6,5 @@ export interface ITag extends IAuditFields {
     description: string;
     slug: string;
     userId: string;
+    status: boolean;
 }

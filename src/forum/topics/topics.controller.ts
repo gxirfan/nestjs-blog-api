@@ -30,14 +30,21 @@ export class TopicsController {
     @Get('all')
     @ResponseMessage('Topics fetched successfully.')
     async findAllPaginated(@Query() query: PaginationQueryDto): Promise<{ data: ITopicResponse[], meta: MetaDto }> {
-        const { data, meta } = await this.topicsService.findAllPaginated(query.page, query.limit);
+        const { data, meta } = await this.topicsService.findAllPaginated(query);
         return { data: TopicMapper.toResponseDto(data), meta };
     }
 
     @Get('all/:tagId')
     @ResponseMessage('Topics fetched successfully.')
     async findAllByTagIdPaginated(@Param('tagId') tagId: string, @Query() query: PaginationQueryDto): Promise<{ data: ITopicResponse[], meta: MetaDto }> {
-        const { data, meta } = await this.topicsService.findAllByTagIdPaginated(tagId, query.page, query.limit);
+        const { data, meta } = await this.topicsService.findAllByTagIdPaginated(tagId, query);
+        return { data: TopicMapper.toResponseDto(data), meta };
+    }
+
+    @Get('all/library/my-topics')
+    @ResponseMessage('Topics fetched successfully.')
+    async findAllByUserIdForLibraryMyTopicsPaginated(@Req() req, @Query() query: PaginationQueryDto): Promise<{ data: ITopicResponse[], meta: MetaDto }> {
+        const { data, meta } = await this.topicsService.findAllByUserIdForLibraryMyTopicsPaginated(req.user.id, query);
         return { data: TopicMapper.toResponseDto(data), meta };
     }
 

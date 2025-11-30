@@ -26,31 +26,46 @@ export class PostsController {
     @Get('all')
     @ResponseMessage("All posts fetched successfully.")
     async findAllPaginated(@Query() query: PaginationQueryDto): Promise<{data: IPostResponse[], meta: MetaDto}> {
-        const { data, meta } = await this.postsService.findAllPaginated(query.page, query.limit);
+        const { data, meta } = await this.postsService.findAllPaginated(query);
+        return { data: PostMapper.toResponseDto(data), meta };
+    }
+
+    @Get('all/view-count')
+    @ResponseMessage("All posts fetched successfully.")
+    async findAllByViewCountPaginated(@Query() query: PaginationQueryDto): Promise<{data: IPostResponse[], meta: MetaDto}> {
+        const { data, meta } = await this.postsService.findAllByViewCountPaginated(query);
         return { data: PostMapper.toResponseDto(data), meta };
     }
 
     @Get('all/topic/:topicId')
     @ResponseMessage("All posts fetched successfully.")
     async findAllByTopicIdPaginated(@Param('topicId') topicId: string, @Query() query: PaginationQueryDto): Promise<{data: IPostResponse[], meta: MetaDto}> {
-        const { data, meta } = await this.postsService.findAllByTopicIdPaginated(topicId, query.page, query.limit);
+        const { data, meta } = await this.postsService.findAllByTopicIdPaginated(topicId, query);
         return { data: PostMapper.toResponseDto(data), meta };
     }
 
     @Get('all/parent/:parentId')
     @ResponseMessage("All posts fetched successfully.")
     async findAllByParentIdPaginated(@Param('parentId') parentId: string, @Query() query: PaginationQueryDto): Promise<{data: IPostResponse[], meta: MetaDto}> {
-        const { data, meta } = await this.postsService.findAllByParentIdPaginated(parentId, query.page, query.limit);
+        const { data, meta } = await this.postsService.findAllByParentIdPaginated(parentId, query);
         return { data: PostMapper.toResponseDto(data), meta };
     }
 
     @Get('all/user/:userId')
     @ResponseMessage("All posts fetched successfully.")
-    async findAllByUserIdForLibraryPaginated(@Param('userId') userId: string, @Query() query: PaginationQueryDto): Promise<{data: IPostResponse[], meta: MetaDto}> {
-        const { data, meta } = await this.postsService.findAllByUserIdForLibraryPaginated(userId, query.page, query.limit);
+    async findAllByUserIdPaginated(@Param('userId') userId: string, @Query() query: PaginationQueryDto): Promise<{data: IPostResponse[], meta: MetaDto}> {
+
+        const { data, meta } = await this.postsService.findAllByUserIdPaginated(userId, query);
         return { data: PostMapper.toResponseDto(data), meta };
     }
 
+    @Get('all/library/my-posts')
+    @ResponseMessage("All posts fetched successfully.")
+    async findAllByUserIdForLibraryMyPostsPaginated(@Req() req, @Query() query: PaginationQueryDto): Promise<{data: IPostResponse[], meta: MetaDto}> {
+        const { data, meta } = await this.postsService.findAllByUserIdForLibraryMyPostsPaginated(req.user.id, query);
+        return { data: PostMapper.toResponseDto(data), meta };
+    }
+    
     @Get()
     @ResponseMessage("All posts fetched successfully.")
     async findAll(): Promise<IPostResponse[]> {

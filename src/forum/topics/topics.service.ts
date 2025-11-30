@@ -10,6 +10,7 @@ import { UpdateTopicDto } from './dto/update-topic.dto';
 import { MetaDto } from 'src/common/dto/meta.dto';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import * as cacheManager from 'cache-manager';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
 @Injectable()
 export class TopicsService {
@@ -98,25 +99,32 @@ export class TopicsService {
     }
 
     async findStatusTrue(): Promise<TopicDocument[]> {
-        return await this.topicSchema.find({ status: true }, {_id: 1}).exec();
+        const tags = await this.tagService.findAllStatusTrue();
+        const tagIds = tags.map(tag => tag.id);
+        return await this.topicSchema.find({ tagId: { $in: tagIds }, status: true }, {_id: 1}).exec();
     }
 
-    async findAllPaginated(page: number, limit: number): Promise<{data: TopicDocument[], meta: MetaDto}> {
+    async findAllPaginated(query: PaginationQueryDto): Promise<{data: TopicDocument[], meta: MetaDto}> {
+        const { page, limit } = query;
+        const tags = await this.tagService.findAllStatusTrue();
+        const tagIds = tags.map(tag => tag.id);
+
         const [topics, total] = await Promise.all([
-            this.topicSchema.find()
+            this.topicSchema.find({ tagId: { $in: tagIds } })
             .populate({ path: 'userId', select: 'username nickname firstName lastName bio role' })
             .populate({ path: 'tagId', select: 'title description slug status', match: { status: true } })
             .sort({ lastPostAt: -1 })
             .skip((page - 1) * limit)
             .limit(limit)
             .exec(),
-            this.topicSchema.countDocuments().exec(), 
+            this.topicSchema.countDocuments({ tagId: { $in: tagIds } }).exec(), 
         ]);
 
         return { data: topics, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
     }
 
-    async findAllByTagIdPaginated(tagId: string, page: number, limit: number): Promise<{data: TopicDocument[], meta: MetaDto}> {
+    async findAllByTagIdPaginated(tagId: string, query: PaginationQueryDto): Promise<{data: TopicDocument[], meta: MetaDto}> {
+        const { page, limit } = query;
         const [topics, total] = await Promise.all([
             this.topicSchema.find({ tagId, status: true })
             .populate({ path: 'userId', select: 'username nickname firstName lastName bio role' })
@@ -126,6 +134,21 @@ export class TopicsService {
             .limit(limit)
             .exec(),
             this.topicSchema.countDocuments({ tagId, status: true }).exec(), 
+        ]);
+        return { data: topics, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+    }
+
+    async findAllByUserIdForLibraryMyTopicsPaginated(userId: string, query: PaginationQueryDto): Promise<{data: TopicDocument[], meta: MetaDto}> {
+        const { page, limit } = query;
+        const [topics, total] = await Promise.all([
+            this.topicSchema.find({ userId })
+            .populate({ path: 'userId', select: 'username nickname firstName lastName bio role' })
+            .populate({ path: 'tagId', select: 'title description slug status', match: { status: true } })
+            .sort({ lastPostAt: -1 })
+            .skip((page - 1) * limit)
+            .limit(limit)
+            .exec(),
+            this.topicSchema.countDocuments({ userId }).exec(), 
         ]);
         return { data: topics, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
     }
@@ -147,7 +170,11 @@ export class TopicsService {
             throw new NotFoundException('Topic not found');
         }
 
-        if ((topic.status === false && topic.userId !== userId)) {
+        const user = userId ? await this.userService.findOneById(userId) : null;
+
+        if (user && (user.role === 'admin' || user.role === 'moderator')) return topic;
+        
+        if ((topic.status === false && topic.userId.toString() !== userId)) {
             throw new ForbiddenException('You do not have permission to view this topic.');
         }
 

@@ -29,6 +29,13 @@ export class TagsController {
         return { data: TagMapper.toResponseDto(data), meta };
     }
 
+    @Get('all/library/my-tags')
+    @ResponseMessage("All tags fetched successfully.")
+    async findAllByUserIdForLibraryMyTagsPaginated(@Req() req, @Query() query: PaginationQueryDto): Promise<{ data: ITagResponse[], meta: MetaDto }> {
+        const { data, meta } = await this.tagsService.findAllByUserIdForLibraryMyTagsPaginated(req.user.id, query);
+        return { data: TagMapper.toResponseDto(data), meta };
+    }
+
     @Get()
     @ResponseMessage("All tags fetched successfully.")
     async findAll(): Promise<ITagResponse[]> {
@@ -37,8 +44,8 @@ export class TagsController {
 
     @Get(':slug')
     @ResponseMessage("Tag fetched successfully.")
-    async findOneBySlug(@Param('slug') slug: string): Promise<ITagResponse> {
-        return TagMapper.toSingleResponseDto(await this.tagsService.findOneBySlug(slug));
+    async findOneBySlug(@Req() req, @Param('slug') slug: string): Promise<ITagResponse> {
+        return TagMapper.toSingleResponseDto(await this.tagsService.findOneBySlug(req.user?.id, slug));
     }
 
     @UseGuards(AuthenticatedGuard)

@@ -10,6 +10,7 @@ import { UserService } from 'src/user/user.service';
 import { TopicsService } from 'src/forum/topics/topics.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import * as cacheManager from 'cache-manager';
+import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
 
 @Injectable()
 export class PostsService {
@@ -80,7 +81,9 @@ export class PostsService {
         this.cacheManager.set(cacheKey, '1', 86400);
     }
 
-    async findAllPaginated(page: number, limit: number): Promise<{data: PostDocument[], meta: MetaDto}> {
+    async findAllPaginated(query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+        const { page, limit } = query;
+        const skip = (page - 1) * limit;
 
         const activeTopics = await this.topicService.findStatusTrue();
         const activeTopicIds = activeTopics.map(topic => topic.id);
@@ -91,7 +94,29 @@ export class PostsService {
             .populate({ path: 'topicId', select: 'title slug tagId' })
             .populate({ path: 'parentId', select: 'title slug' })
             .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
+            .skip(skip)
+            .limit(limit)
+            .exec(),
+            this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, status: true }).exec(), 
+        ]);
+
+        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+    }
+
+    async findAllByViewCountPaginated(query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+        const { page, limit } = query;
+        const skip = (page - 1) * limit;
+
+        const activeTopics = await this.topicService.findStatusTrue();
+        const activeTopicIds = activeTopics.map(topic => topic.id);
+        
+        const [posts, total] = await Promise.all([
+            this.postModel.find({ topicId: { $in: activeTopicIds }, status: true })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
+            .populate({ path: 'topicId', select: 'title slug tagId' })
+            .populate({ path: 'parentId', select: 'title slug' })
+            .sort({ viewCount: -1 })
+            .skip(skip)
             .limit(limit)
             .exec(),
             this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, status: true }).exec(), 
@@ -112,19 +137,49 @@ export class PostsService {
         return this.postModel.countDocuments({ topicId, status: true }).exec();
     }
 
+    async findAllByUserId(userId: string): Promise<PostDocument[]> {
+        const posts = await this.postModel.find({ userId }).populate({ path: 'userId', select: 'username role nickname firstName lastName email' }).populate({ path: 'topicId', select: 'title slug tagId' }).populate({ path: 'parentId', select: 'title slug' }).sort({ createdAt: -1 }).exec();
 
+        if (!posts) throw new NotFoundException('Posts not found');
 
-    async findAllByTopicIdPaginated(topicId: string, page: number, limit: number): Promise<{data: PostDocument[], meta: MetaDto}> {
+        return posts;
+    }
+
+    async findAllByUserIdPaginated(userId: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+        const { page, limit } = query;
+        const skip = (page - 1) * limit;
         const activeTopics = await this.topicService.findStatusTrue();
-        const activeTopicIds = activeTopics.map(topic => topic.id).filter(id => id === topicId);
-
+        const activeTopicIds = activeTopics.map(topic => topic.id);
+        
         const [posts, total] = await Promise.all([
-            this.postModel.find({ topicId: { $in: activeTopicIds }, status: true })
+            this.postModel.find({ userId, topicId: { $in: activeTopicIds }, status: true })
             .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
             .populate({ path: 'topicId', select: 'title slug tagId' })
             .populate({ path: 'parentId', select: 'title slug' })
             .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
+            .skip(skip)
+            .limit(limit)
+            .exec(),
+            this.postModel.countDocuments({ userId, topicId: { $in: activeTopicIds }, status: true }).exec(), 
+        ]);
+        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+    }
+
+
+
+    async findAllByTopicIdPaginated(topicId: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+        const { page, limit } = query;
+        const skip = (page - 1) * limit;
+        const activeTopics = await this.topicService.findStatusTrue();
+        const activeTopicIds = activeTopics.map(topic => topic.id).filter(id => id === topicId);
+
+        const [posts, total] = await Promise.all([
+            this.postModel.find({ topicId: { $in: activeTopicIds }, status: true, parentId: null })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
+            .populate({ path: 'topicId', select: 'title slug tagId' })
+            .populate({ path: 'parentId', select: 'title slug' })
+            .sort({ createdAt: -1 })
+            .skip(skip)
             .limit(limit)
             .exec(),
             this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, status: true }).exec(), 
@@ -132,7 +187,9 @@ export class PostsService {
         return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
     }
 
-    async findAllByParentIdPaginated(parentId: string, page: number, limit: number): Promise<{data: PostDocument[], meta: MetaDto}> {
+    async findAllByParentIdPaginated(parentId: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+        const { page, limit } = query;
+        const skip = (page - 1) * limit;
         const activeTopics = await this.topicService.findStatusTrue();
         const activeTopicIds = activeTopics.map(topic => topic.id);
         
@@ -142,7 +199,7 @@ export class PostsService {
             .populate({ path: 'topicId', select: 'title slug tagId' })
             .populate({ path: 'parentId', select: 'title slug' })
             .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
+            .skip(skip)
             .limit(limit)
             .exec(),
             this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, parentId, status: true }).exec(), 
@@ -150,14 +207,17 @@ export class PostsService {
         return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
     }
 
-    async findAllByUserIdForLibraryPaginated(userId: string, page: number, limit: number): Promise<{data: PostDocument[], meta: MetaDto}> {
+    async findAllByUserIdForLibraryMyPostsPaginated(userId: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+        const { page, limit } = query;
+        const skip = (page - 1) * limit;
+
         const [posts, total] = await Promise.all([
             this.postModel.find({ userId })
             .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
             .populate({ path: 'topicId', select: 'title slug tagId' })
             .populate({ path: 'parentId', select: 'title slug' })
             .sort({ createdAt: -1 })
-            .skip((page - 1) * limit)
+            .skip(skip)
             .limit(limit)
             .exec(),
             this.postModel.countDocuments({ userId }).exec(), 
@@ -182,10 +242,11 @@ export class PostsService {
 
         if (!topic) throw new NotFoundException('Topic not found');
 
-        
-        if ((topic.status === false && topic.userId !== userId) || (post.status === false && post.userId !== userId)) throw new UnauthorizedException('You are not authorized to view this topic');
+        const user = userId ? await this.userService.findOneById(userId) : null;
 
-        
+        if (user !== null && (user.role === 'admin' || user.role === 'moderator')) return post;
+
+        if ((topic.status === false && Object(topic.userId).id !== userId) && (post.status === false && Object(post.userId).id !== userId)) throw new UnauthorizedException('You are not authorized to view this post');
 
         return post;
     }
