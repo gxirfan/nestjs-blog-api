@@ -1,15 +1,15 @@
 import { TagDocument } from '../schemas/tag.schema';
-import { ITagResponse } from '../interfaces/tag.response.interface';
+import { TagResponseDto } from '../dto/tag-response.dto';
 
 export class TagMapper {
-    public static toResponseDto(tags: TagDocument[]): ITagResponse[] {
+    public static toResponseDto(tags: TagDocument[]): TagResponseDto[] {
         if (!tags || tags.length === 0) return [];
         
         return tags.map(tagDoc => {
             const tagObject = tagDoc.toObject({ virtuals: true });
             const userObject = tagObject.userId; 
 
-            const response: ITagResponse = {
+            const response: TagResponseDto = {
                 id: tagObject.id, 
                 title: tagObject.title,
                 description: tagObject.description,
@@ -30,7 +30,7 @@ export class TagMapper {
         });
     }
 
-    public static toSingleResponseDto(tagDoc: TagDocument): ITagResponse {
-        return TagMapper.toResponseDto([tagDoc])[0] as ITagResponse;
+    public static toSingleResponseDto(tagDoc: TagDocument): TagResponseDto {
+        return TagMapper.toResponseDto([tagDoc])[0] as TagResponseDto;
     }
 }

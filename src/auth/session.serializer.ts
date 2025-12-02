@@ -1,7 +1,7 @@
 import { PassportSerializer } from '@nestjs/passport';
 import { UserService } from '../user/user.service';
 import { Injectable } from '@nestjs/common';
-import { IUserResponse } from 'src/user/interfaces/user-response.interface';
+import { UserResponseDto } from '../user/dto/user-response.dto';
 
 @Injectable()
 export class SessionSerializer extends PassportSerializer {
@@ -9,7 +9,7 @@ export class SessionSerializer extends PassportSerializer {
     super();
   }
 
-  serializeUser(user: IUserResponse, done: (err: Error | null, id: string | null) => void): void {
+  serializeUser(user: UserResponseDto, done: (err: Error | null, id: string | null) => void): void {
     try {
       const userId = user.id; 
       
@@ -27,7 +27,7 @@ export class SessionSerializer extends PassportSerializer {
     try {
       const user = await this.userService.findOneByIdAsDocument(payload); 
       if (user) {
-        const userResponseDto: IUserResponse = {
+        const userResponseDto: UserResponseDto = {
           id: user.id,
           username: user.username,
           nickname: user.nickname,

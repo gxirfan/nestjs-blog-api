@@ -1,6 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException, UseGuards } from '@nestjs/common';
 import { CreateTagDto } from './dto/create-tag.dto';
-import { ITagResponse } from './interfaces/tag.response.interface';
 import { UserService } from 'src/user/user.service';
 import { Tag, TagDocument } from './schemas/tag.schema';
 import { Model, Types } from 'mongoose';

@@ -2,7 +2,7 @@ import { Controller, Post, UseGuards, Request, Get, HttpCode, Body, HttpStatus, 
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { AuthenticatedGuard } from './guards/authenticated.guard';
 import { CreateUserRequestDto } from 'src/user/dto/create-user.dto';
-import { IUserResponse, IUserResponseWithRecoveryCodes } from 'src/user/interfaces/user-response.interface';
+import { UserResponseDto, UserResponseWithRecoveryCodesDto } from 'src/user/dto/user-response.dto';
 import { UserService } from 'src/user/user.service';
 import { AuthService } from './auth.service';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -19,9 +19,9 @@ export class AuthController {
     @UseInterceptors(TransformInterceptor)
     @UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
     @Post('register')
-    async create(@Body() userDto: CreateUserRequestDto): Promise<IUserResponseWithRecoveryCodes> {
+    async create(@Body() userDto: CreateUserRequestDto): Promise<UserResponseWithRecoveryCodesDto> {
         const user = await this.userService.create(userDto);
-        const cleanUserResponse: IUserResponseWithRecoveryCodes = {
+        const cleanUserResponse: UserResponseWithRecoveryCodesDto = {
             id: user.id,
             username: user.username,
             firstName: user.firstName,
@@ -34,8 +34,13 @@ export class AuthController {
             cover: user.cover,
             location: user.location,
             gender: user.gender,
-            
+            isEmailVerified: user.isEmailVerified,
+            isEmailPublic: user.isEmailPublic,
+            role: user.role,
+            status: user.status,
+            lastLoginAt: user.lastLoginAt,
             createdAt: user.createdAt,
+            updatedAt: user.updatedAt,
             recoveryCodes: user.recoveryCodes,
         };
         return cleanUserResponse;
@@ -55,7 +60,7 @@ export class AuthController {
                 }
                 const rawUser = req.user.toObject ? req.user.toObject({ virtuals: true }) : req.user;
                     
-                const cleanUserResponse: IUserResponse = {
+                const cleanUserResponse: UserResponseDto = {
                     id: rawUser.id,
                     username: rawUser.username,
                     firstName: rawUser.firstName,
@@ -96,7 +101,7 @@ export class AuthController {
     async status(@Request() req) {
         if (req.user) {
             const rawUser = req.user.toObject ? req.user.toObject({ virtuals: true }) : req.user;
-            const cleanUserResponse: IUserResponse = {
+            const cleanUserResponse: UserResponseDto = {
                     id: rawUser.id,
                     username: rawUser.username,
                     firstName: rawUser.firstName,

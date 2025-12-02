@@ -1,9 +1,9 @@
 import { TopicDocument } from '../schemas/topic.schema';
-import { ITopicResponse } from '../interfaces/topic-response.interface';
+import { TopicResponseDto } from '../dto/topic-response.dto';
 
 export class TopicMapper {
 
-    public static toResponseDto(topics: TopicDocument[]): ITopicResponse[] {
+    public static toResponseDto(topics: TopicDocument[]): TopicResponseDto[] {
         if (!topics || topics.length === 0) return [];
         
         return topics.map((topicDoc) => {
@@ -12,7 +12,7 @@ export class TopicMapper {
             const author = topicObject.userId; 
             const tag = topicObject.tagId;
 
-            const response: ITopicResponse = {
+            const response: TopicResponseDto = {
                 id: topicObject.id,
                 title: topicObject.title,
                 slug: topicObject.slug,
@@ -42,7 +42,7 @@ export class TopicMapper {
         });
     }
 
-    public static toSingleResponseDto(topic: TopicDocument): ITopicResponse {
-    return TopicMapper.toResponseDto([topic])[0] as ITopicResponse;
+    public static toSingleResponseDto(topic: TopicDocument): TopicResponseDto {
+    return TopicMapper.toResponseDto([topic])[0] as TopicResponseDto;
     }
 }

@@ -1,7 +1,7 @@
 import { Controller, Post, Body, Get, Param, UseGuards, Req, UseInterceptors, HttpCode, HttpStatus, SerializeOptions, Patch, Query, UsePipes, ValidationPipe } from '@nestjs/common';
 import { TagsService } from './tags.service';
 import { CreateTagDto } from './dto/create-tag.dto';
-import { ITagResponse } from './interfaces/tag.response.interface';
+import { TagResponseDto } from './dto/tag-response.dto';
 import { AuthenticatedGuard } from 'src/auth/guards/authenticated.guard';
 import { TransformInterceptor } from 'src/common/interceptors/transform.interceptor';
 import { TagMapper } from './mappers/tag.mapper';
@@ -17,41 +17,41 @@ export class TagsController {
 
     @UseGuards(AuthenticatedGuard)
     @Post()
-    async createTag(@Req() req, @Body() createTagDto: CreateTagDto): Promise<ITagResponse> {
+    async createTag(@Req() req, @Body() createTagDto: CreateTagDto): Promise<TagResponseDto> {
         return TagMapper.toSingleResponseDto(await this.tagsService.createTag(req.user.id, createTagDto));
     }
 
     @Get('all')
     @UsePipes(new ValidationPipe({ transform: true }))
     @ResponseMessage("All tags fetched successfully.")
-    async findAllPaginated(@Query() query: PaginationQueryDto): Promise<{ data: ITagResponse[], meta: MetaDto }> {
+    async findAllPaginated(@Query() query: PaginationQueryDto): Promise<{ data: TagResponseDto[], meta: MetaDto }> {
         const { data, meta } = await this.tagsService.findAllPaginated(query);
         return { data: TagMapper.toResponseDto(data), meta };
     }
 
     @Get('all/library/my-tags')
     @ResponseMessage("All tags fetched successfully.")
-    async findAllByUserIdForLibraryMyTagsPaginated(@Req() req, @Query() query: PaginationQueryDto): Promise<{ data: ITagResponse[], meta: MetaDto }> {
+    async findAllByUserIdForLibraryMyTagsPaginated(@Req() req, @Query() query: PaginationQueryDto): Promise<{ data: TagResponseDto[], meta: MetaDto }> {
         const { data, meta } = await this.tagsService.findAllByUserIdForLibraryMyTagsPaginated(req.user.id, query);
         return { data: TagMapper.toResponseDto(data), meta };
     }
 
     @Get()
     @ResponseMessage("All tags fetched successfully.")
-    async findAll(): Promise<ITagResponse[]> {
+    async findAll(): Promise<TagResponseDto[]> {
         return TagMapper.toResponseDto(await this.tagsService.findAll()); 
     }
 
     @Get(':slug')
     @ResponseMessage("Tag fetched successfully.")
-    async findOneBySlug(@Req() req, @Param('slug') slug: string): Promise<ITagResponse> {
+    async findOneBySlug(@Req() req, @Param('slug') slug: string): Promise<TagResponseDto> {
         return TagMapper.toSingleResponseDto(await this.tagsService.findOneBySlug(req.user?.id, slug));
     }
 
     @UseGuards(AuthenticatedGuard)
     @Patch(':id')
     @ResponseMessage('Tag updated successfully.')
-    async updateOneById(@Req() req, @Param('id') id: string, @Body() updateTagDto: UpdateTagDto): Promise<ITagResponse> {
+    async updateOneById(@Req() req, @Param('id') id: string, @Body() updateTagDto: UpdateTagDto): Promise<TagResponseDto> {
         return TagMapper.toSingleResponseDto(await this.tagsService.updateOneById(id, req.user.id, updateTagDto));
     }
 }

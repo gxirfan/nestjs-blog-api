@@ -1,8 +1,8 @@
-import { IPostResponse } from "../interfaces/post-response.interface";
+import { PostResponseDto } from "../dto/post-response.dto";
 import { PostDocument } from "../schemas/post.schema";
 
 export class PostMapper {
-    public static toResponseDto(posts: PostDocument[]): IPostResponse[] {
+    public static toResponseDto(posts: PostDocument[]): PostResponseDto[] {
         if (!posts) return [];
         
         return posts.map(postDoc => {
@@ -11,7 +11,7 @@ export class PostMapper {
             const topicObject = postObject.topicId;
             const parentObject = postObject.parentId;
 
-            const response: IPostResponse = {
+            const response: PostResponseDto = {
                 id: postObject.id,
                 title: postObject.title,
                 slug: postObject.slug,
@@ -52,7 +52,7 @@ export class PostMapper {
         });
     }
 
-    public static toSingleResponseDto(postDoc: PostDocument): IPostResponse {
-        return this.toResponseDto([postDoc])[0] as IPostResponse;
+    public static toSingleResponseDto(postDoc: PostDocument): PostResponseDto {
+        return this.toResponseDto([postDoc])[0] as PostResponseDto;
     }
 }

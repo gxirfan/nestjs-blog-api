@@ -51,18 +51,14 @@ export class UserService {
     //read
     async findAll(): Promise<UserDocument[]> {
         const users = await this.userModel.find().exec();
-        if (!users) {
-            throw new NotFoundException('Users not found');
-        }
-        if (users.length === 0) {
-            throw new NotFoundException('Users not found');
-        }
+        if (!users) throw new NotFoundException('Users not found');
+        if (users.length === 0) throw new NotFoundException('Users not found');
         return users;
     }
 
     //using session serializer
     async findOneByIdAsDocument(id: string): Promise<UserDocument | null> {
-        return await this.userModel.findById(id).exec();
+        return await this.userModel.findById(id).exec() || null;
     }
 
     //using auth validation
@@ -71,25 +67,19 @@ export class UserService {
         .select('+passwordHash')
         .exec();
 
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+        if (!user) throw new NotFoundException('User not found');
         return user;
     }
 
     async findOneById(id: string): Promise<UserDocument> {
         const user = await this.userModel.findById(id).exec();
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+        if (!user) throw new NotFoundException('User not found');
         return user;
     }
 
     async findOneByUsername(username: string): Promise<UserDocument> {
         const user = await this.userModel.findOne({ username }).exec();
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+        if (!user) throw new NotFoundException('User not found');
         return user;
     }
 
@@ -102,17 +92,13 @@ export class UserService {
             ],
         }).select('+resetPasswordToken')
         .exec();
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+        if (!user) throw new NotFoundException('User not found');
         return user;
     }
 
     async findOneByResetToken(token: string): Promise<UserDocument> {
         const user = await this.userModel.findOne({ resetPasswordToken: token, resetPasswordExpiresAt: { $gt: Date.now() } }).exec();
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+        if (!user) throw new NotFoundException('User not found');
         return user;
     }
 
@@ -138,26 +124,26 @@ export class UserService {
 
     async findOneByUsernameWithCodes(username: string): Promise<UserDocument> {
         const user = await this.userModel.findOne({ username }).select('+recoveryCodes').exec();
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+        if (!user) throw new NotFoundException('User not found');
+        return user;
+    }
+
+    async findOneByUsernameForPublicProfile(username: string): Promise<UserDocument> {
+        const user = await this.userModel.findOne({ username }).select('+isEmailPublic').exec();
+        if (!user) throw new NotFoundException('User not found');
         return user;
     }
 
     //update
     async update(id: string, user: UpdateMeDto):Promise<UserDocument> {
         const updatedUser = await this.userModel.findByIdAndUpdate(id, user, { new: true }).exec();
-        if (!updatedUser) {
-            throw new NotFoundException('User not found');
-        }
+        if (!updatedUser) throw new NotFoundException('User not found');
         return updatedUser;
     }
 
     async updatePassword(id: string, user: UpdateUserPasswordDto):Promise<UserDocument> {
         const foundUser = await this.userModel.findById(id).select('+passwordHash').exec();
-        if (!foundUser) {
-            throw new NotFoundException('User not found');
-        }
+        if (!foundUser) throw new NotFoundException('User not found');
         
         const isMatch = await this.comparePassword(user.oldPassword, foundUser.passwordHash);
         if (!isMatch) {
@@ -171,25 +157,19 @@ export class UserService {
     //admin
     async updateUserByAdmin(id: string, user: UpdateUserByAdminDto):Promise<UserDocument> {
         const updatedUser = await this.userModel.findByIdAndUpdate(id, user, { new: true }).exec();
-        if (!updatedUser) {
-            throw new NotFoundException('User not found');
-        }
+        if (!updatedUser) throw new NotFoundException('User not found');
         return updatedUser;
     }
 
     async updatePasswordByAdmin(id: string, newPassword: string):Promise<UserDocument> {
         const updatedUser = await this.userModel.findByIdAndUpdate(id, { passwordHash: await this.hashPassword(newPassword) }, { new: true }).exec();
-        if (!updatedUser) {
-            throw new NotFoundException('User not found');
-        }
+        if (!updatedUser) throw new NotFoundException('User not found');
         return updatedUser;
     }
 
     async deleteUser(id: string):Promise<UserDocument> {
         const deletedUser = await this.userModel.findByIdAndDelete(id).exec();
-        if (!deletedUser) {
-            throw new NotFoundException('User not found');
-        }
+        if (!deletedUser) throw new NotFoundException('User not found');
         return deletedUser;
     }
 }
