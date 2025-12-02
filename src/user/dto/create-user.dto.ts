@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { IsDate, IsEmail, IsNotEmpty, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 
 export class CreateUserRequestDto {
     @IsString()
@@ -31,7 +31,31 @@ export class CreateUserRequestDto {
     @MinLength(1, {message: "Email must be at least 1 character long."})
     @MaxLength(100, {message: "Email must be at most 100 characters long."})
     email: string;
+
+
     
+    @IsDate()
+    @IsNotEmpty({message: "Birth date is required."})
+    birthDate: Date;
+
+    @IsString()
+    @IsOptional()
+    avatar?: string;
+
+    @IsString()
+    @IsOptional()
+    cover?: string;
+
+    @IsString()
+    @IsOptional()
+    location?: string;
+
+    @IsString()
+    @IsOptional()
+    gender?: string;
+    
+
+
     @IsString()
     @IsNotEmpty({message: "Password is required."})
     @MinLength(6, {message: "Password must be at least 6 characters long."})

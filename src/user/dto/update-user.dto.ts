@@ -1,4 +1,4 @@
-import { IsEmail, IsEnum, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { IsDate, IsEmail, IsEnum, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 import { UserRole, UserStatus } from "../schemas/user.schema";
 
 export class BaseUpdateUserDto{
@@ -37,6 +37,34 @@ export class BaseUpdateUserDto{
     @MinLength(1)
     @MaxLength(100)
     email?: string;
+
+    @IsOptional()
+    @IsDate()
+    birthDate?: Date;
+
+    @IsOptional()
+    @IsString()
+    @MinLength(1)
+    @MaxLength(50)
+    avatar?: string;
+
+    @IsOptional()
+    @IsString()
+    @MinLength(1)
+    @MaxLength(50)
+    cover?: string;
+
+    @IsOptional()
+    @IsString()
+    @MinLength(1)
+    @MaxLength(50)
+    location?: string;
+
+    @IsOptional()
+    @IsString()
+    @MinLength(1)
+    @MaxLength(50)
+    gender?: string;
 }
 
 //update

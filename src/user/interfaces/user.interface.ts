@@ -3,10 +3,10 @@ import { IAuditFields } from "src/common/interfaces/common.interface";
 export interface IUser extends IAuditFields {
     id: string;
     username: string;
-    nickname: string;
+    nickname?: string;
     firstName: string;
     lastName: string;
-    bio: string;
+    bio?: string;
     email: string;
     isEmailVerified: boolean;
     isEmailPublic: boolean;
@@ -16,5 +16,10 @@ export interface IUser extends IAuditFields {
     recoveryCodes?: string[];
     role: string;
     status: string;
+    birthDate: Date;
+    avatar?: string;
+    cover?: string;
+    location?: string;
+    gender?: string;
     lastLoginAt: Date;
 }
