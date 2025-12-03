@@ -1,4 +1,4 @@
-import { IsDate, IsEmail, IsEnum, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
+import { IsBoolean, IsDate, IsEmail, IsEnum, IsOptional, IsString, MaxLength, MinLength } from "class-validator";
 import { UserRole, UserStatus } from "../schemas/user.schema";
 
 export class BaseUpdateUserDto{
@@ -65,6 +65,10 @@ export class BaseUpdateUserDto{
     @MinLength(1)
     @MaxLength(50)
     gender?: string;
+
+    @IsOptional()
+    @IsBoolean()
+    isEmailPublic?: boolean;
 }
 
 //update

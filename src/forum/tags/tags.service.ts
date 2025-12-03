@@ -44,9 +44,7 @@ export class TagsService {
 
         const user = await this.userService.findOneById(userId);
         
-        if (!user || Array.isArray(user)) {
-            throw new Error('User not found');
-        }
+        if (!user || Array.isArray(user)) throw new Error('User not found');
 
         const createdTag = await tagDocument.save();
 
@@ -67,7 +65,7 @@ export class TagsService {
             this.tagSchema.find({ status: true })
             .skip(skip)
             .limit(limit)
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
             .sort({ createdAt: -1 })
             .exec(),
             this.tagSchema.countDocuments({ status: true }).exec(), 
@@ -84,7 +82,7 @@ export class TagsService {
             this.tagSchema.find({ userId })
             .skip(skip)
             .limit(limit)
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
             .sort({ createdAt: -1 })
             .exec(),
             this.tagSchema.countDocuments({ userId }).exec(), 
@@ -111,11 +109,11 @@ export class TagsService {
     }
 
     async findAll(): Promise<TagDocument[]> {
-        return await this.tagSchema.find().populate({ path: 'userId', select: 'username role nickname firstName lastName email' }).sort({ createdAt: -1 }).exec();
+        return await this.tagSchema.find().populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' }).sort({ createdAt: -1 }).exec();
     }
 
     async findOneBySlug(userId: string, slug:string): Promise<TagDocument>{
-        const tag = await this.tagSchema.findOne({slug}).populate({ path: 'userId', select: 'username role nickname firstName lastName email' }).exec();
+        const tag = await this.tagSchema.findOne({slug}).populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' }).exec();
 
         if (!tag) throw new NotFoundException('Tag not found');
 
@@ -129,7 +127,7 @@ export class TagsService {
     }
 
     async findOneByIdAsDocument(id:string): Promise<TagDocument>{
-        const tag = await this.tagSchema.findById(id).populate({ path: 'userId', select: 'username role nickname firstName lastName email' }).exec();
+        const tag = await this.tagSchema.findById(id).populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' }).exec();
 
         if (!tag) throw new NotFoundException('Tag not found');
 
@@ -141,9 +139,7 @@ export class TagsService {
 
         if (!tag) throw new NotFoundException('Tag not found');
 
-        if ((tag && updateTagDto.title) && tag.title !== updateTagDto.title) {
-            tag.slug = await this.createUniqueSlug(updateTagDto.title);
-        }
+        if ((tag && updateTagDto.title) && tag.title !== updateTagDto.title) tag.slug = await this.createUniqueSlug(updateTagDto.title);
 
         tag.set(updateTagDto);
 

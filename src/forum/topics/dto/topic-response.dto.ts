@@ -11,6 +11,7 @@ export class TopicResponseDto implements IAuditFields {
     tagDescription: string;
     userId: string;
     author: string;
+    authorAvatar: string;
     authorUsername: string;
     authorNickname: string;
     authorBio: string;

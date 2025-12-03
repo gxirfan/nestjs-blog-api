@@ -32,6 +32,7 @@ export class TopicMapper {
                 authorBio: author.bio,
                 authorRole: author.role,
                 author: `${author.firstName} ${author.lastName}`,
+                authorAvatar: author.avatar,
                 lastPostAt: topicObject.lastPostAt.toISOString(),
                 createdAt: topicObject.createdAt.toISOString(),
                 updatedAt: topicObject.updatedAt.toISOString(),

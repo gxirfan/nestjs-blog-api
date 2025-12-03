@@ -46,15 +46,11 @@ export class TopicsService {
         try {
             const user = await this.userService.findOneById(userId);
 
-            if (!user) {
-                throw new NotFoundException('User not found');
-            }
+            if (!user) throw new NotFoundException('User not found');
 
             const tag = await this.tagService.findOneByIdAsDocument(createTopicDto.tagId);
 
-            if (!tag) {
-                throw new NotFoundException('Tag not found');
-            }
+            if (!tag) throw new NotFoundException('Tag not found');
 
             const topic = new this.topicSchema({
                 userId: user.id,
@@ -68,9 +64,7 @@ export class TopicsService {
 
             return await this.findOneById(createdTopic.id);
         } catch (error) {
-            if (error.code === 11000) { 
-                throw new ConflictException('Topic already exists');
-            }
+            if (error.code === 11000) throw new ConflictException('Topic already exists');
             throw new InternalServerErrorException('Topic could not be created', error.message);
         }
     }
@@ -80,9 +74,7 @@ export class TopicsService {
         
         const viewed = await this.cacheManager.get(cacheKey);
 
-        if (viewed) {
-            return;
-        }
+        if (viewed) return;
 
         this.topicSchema.findByIdAndUpdate(topicId, { $inc: { viewCount: 1 } }).exec();
 
@@ -92,7 +84,7 @@ export class TopicsService {
     async findAll(): Promise<TopicDocument[]> {
         return await this.topicSchema
             .find()
-            .populate({ path: 'userId', select: 'username nickname firstName lastName bio role' })
+            .populate({ path: 'userId', select: 'username nickname firstName lastName bio role avatar' })
             .populate({ path: 'tagId', select: 'title description slug' })
             .sort({ lastPostAt: -1 })
             .exec();
@@ -111,7 +103,7 @@ export class TopicsService {
 
         const [topics, total] = await Promise.all([
             this.topicSchema.find({ tagId: { $in: tagIds } })
-            .populate({ path: 'userId', select: 'username nickname firstName lastName bio role' })
+            .populate({ path: 'userId', select: 'username nickname firstName lastName bio role avatar' })
             .populate({ path: 'tagId', select: 'title description slug status', match: { status: true } })
             .sort({ lastPostAt: -1 })
             .skip((page - 1) * limit)
@@ -127,7 +119,7 @@ export class TopicsService {
         const { page, limit } = query;
         const [topics, total] = await Promise.all([
             this.topicSchema.find({ tagId, status: true })
-            .populate({ path: 'userId', select: 'username nickname firstName lastName bio role' })
+            .populate({ path: 'userId', select: 'username nickname firstName lastName bio role avatar' })
             .populate({ path: 'tagId', select: 'title description slug status', match: { status: true } })
             .sort({ lastPostAt: -1 })
             .skip((page - 1) * limit)
@@ -142,7 +134,7 @@ export class TopicsService {
         const { page, limit } = query;
         const [topics, total] = await Promise.all([
             this.topicSchema.find({ userId })
-            .populate({ path: 'userId', select: 'username nickname firstName lastName bio role' })
+            .populate({ path: 'userId', select: 'username nickname firstName lastName bio role avatar' })
             .populate({ path: 'tagId', select: 'title description slug status', match: { status: true } })
             .sort({ lastPostAt: -1 })
             .skip((page - 1) * limit)
@@ -154,21 +146,17 @@ export class TopicsService {
     }
 
     async findOneById(id: string): Promise<TopicDocument> {
-        const topic = await this.topicSchema.findById(id).populate({ path: 'userId', select: 'username nickname firstName lastName bio role' }).populate({ path: 'tagId', select: 'title description slug' }).exec();
+        const topic = await this.topicSchema.findById(id).populate({ path: 'userId', select: 'username nickname firstName lastName bio role avatar' }).populate({ path: 'tagId', select: 'title description slug' }).exec();
 
-        if (!topic) {
-            throw new NotFoundException('Topic not found');
-        }
+        if (!topic) throw new NotFoundException('Topic not found');
 
         return topic;
     }
 
     async findOneBySlug(userId: string, slug: string): Promise<TopicDocument> {
-        const topic = await this.topicSchema.findOne({ slug }).populate({ path: 'userId', select: 'username nickname firstName lastName bio role' }).populate({ path: 'tagId', select: 'title description slug' }).exec();
+        const topic = await this.topicSchema.findOne({ slug }).populate({ path: 'userId', select: 'username nickname firstName lastName bio role avatar' }).populate({ path: 'tagId', select: 'title description slug' }).exec();
 
-        if (!topic) {
-            throw new NotFoundException('Topic not found');
-        }
+        if (!topic) throw new NotFoundException('Topic not found');
 
         const user = userId ? await this.userService.findOneById(userId) : null;
 
@@ -182,7 +170,7 @@ export class TopicsService {
     }
 
     async findOneByTagId(tagId: string): Promise<TopicDocument[]> {
-        return await this.topicSchema.find({ tagId }).populate({ path: 'userId', select: 'username nickname firstName lastName bio role' }).populate({ path: 'tagId', select: 'title description slug' }).sort({ lastPostAt: -1 }).exec();
+        return await this.topicSchema.find({ tagId }).populate({ path: 'userId', select: 'username nickname firstName lastName bio role avatar' }).populate({ path: 'tagId', select: 'title description slug' }).sort({ lastPostAt: -1 }).exec();
     }
 
     
@@ -191,9 +179,7 @@ export class TopicsService {
     async findOneByIdAsDocument(id: string): Promise<TopicDocument> {
         const topic = await this.topicSchema.findById(id).exec();
 
-        if (!topic) {
-            throw new NotFoundException('Topic not found');
-        }
+        if (!topic) throw new NotFoundException('Topic not found');
 
         return topic;
     }
@@ -203,20 +189,13 @@ export class TopicsService {
 
         const user = await this.userService.findOneById(currentUserId);
 
-        if (!user) {
-            throw new NotFoundException('User not found');
-        }
+        if (!user) throw new NotFoundException('User not found');
 
         const topic = await this.topicSchema.findOne({ _id: id, userId: currentUserId });
 
+        if (!topic) throw new NotFoundException('Topic not found');
 
-        if (!topic) {
-            throw new NotFoundException('Topic not found');
-        }
-
-        if ((user.role !== 'admin' && user.role !== 'moderator') && topic.userId.toString() !== currentUserId) {
-            throw new ForbiddenException('You do not have permission to update this topic.');
-        }
+        if ((user.role !== 'admin' && user.role !== 'moderator') && topic.userId.toString() !== currentUserId) throw new ForbiddenException('You do not have permission to update this topic.');
 
         if (updateTopicDto.title && updateTopicDto.title !== topic.title) topic.slug = updateTopicDto.slug = await this.createUniqueSlug(updateTopicDto.title);
 

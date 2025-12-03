@@ -21,6 +21,8 @@ export class PostMapper {
                 authorNickname: userObject.nickname,
                 authorBio: userObject.bio,
                 authorRole: userObject.role,
+                authorUsername: userObject.username,
+                authorAvatar: userObject.avatar,
                 
                 topicId: topicObject.id,
                 topicTitle: topicObject.title,
@@ -36,6 +38,8 @@ export class PostMapper {
                 parentAuthorNickname: parentObject?.authorNickname || null || undefined,
                 parentAuthorBio: parentObject?.authorBio || null || undefined,
                 parentAuthorRole: parentObject?.authorRole || null || undefined,
+                parentAuthorUsername: parentObject?.authorUsername || null || undefined,
+                parentAuthorAvatar: parentObject?.authorAvatar || null || undefined,
 
                 viewCount: postObject.viewCount,
                 postCount: postObject.postCount,

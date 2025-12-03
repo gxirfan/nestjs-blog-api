@@ -51,6 +51,13 @@ export class PostsController {
         return { data: PostMapper.toResponseDto(data), meta };
     }
 
+    @Get('all/username/:username')
+    @ResponseMessage("All posts fetched successfully.")
+    async findAllByUsernamePaginated(@Param('username') username: string, @Query() query: PaginationQueryDto): Promise<{data: PostResponseDto[], meta: MetaDto}> {
+        const { data, meta } = await this.postsService.findAllByUsernamePaginated(username, query);
+        return { data: PostMapper.toResponseDto(data), meta };
+    }
+
     @Get('all/user/:userId')
     @ResponseMessage("All posts fetched successfully.")
     async findAllByUserIdPaginated(@Param('userId') userId: string, @Query() query: PaginationQueryDto): Promise<{data: PostResponseDto[], meta: MetaDto}> {

@@ -10,6 +10,8 @@ export class PostResponseDto implements IAuditFields{
     authorNickname: string;
     authorBio: string;
     authorRole: string;
+    authorUsername: string;
+    authorAvatar: string;
     
     topicId: string;
     topicTitle: string;
@@ -27,9 +29,11 @@ export class PostResponseDto implements IAuditFields{
 
     parentUserId?: string;
     parentAuthor?: string;
+    parentAuthorUsername?: string;
     parentAuthorNickname?: string;
     parentAuthorBio?: string;
     parentAuthorRole?: string;
+    parentAuthorAvatar?: string;
     status: boolean;
 
     createdAt: Date;

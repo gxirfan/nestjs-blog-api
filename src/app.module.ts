@@ -14,6 +14,8 @@ import { ContactModule } from './contact/contact.module';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ErrorsLoggingInterceptor } from './common/interceptors/error.logging.interceptor';
 import { AllExceptionsFilter } from './common/interceptors/all-exceptions.filter';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 @Module({
   imports: [
     CacheModule.register({
@@ -30,6 +32,10 @@ import { AllExceptionsFilter } from './common/interceptors/all-exceptions.filter
         uri: configService.get<string>('MONGODB_URI'),
       }),
       inject: [ConfigService],
+    }),
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'public'), 
+      serveRoot: '/', 
     }),
     UserModule,
     

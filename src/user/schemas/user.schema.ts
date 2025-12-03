@@ -37,6 +37,13 @@ const userDocumentToJsonTransformer = (doc, ret) => {
     },
  })
 export class User {
+
+    @Prop({ required: false, default: null, type: String, trim: true })
+    avatar?: string;
+
+    @Prop({ required: false, default: null, type: String, trim: true })
+    cover?: string;
+
     @Prop({ required: true, trim: true, unique: true, lowercase: true, maxLength: 50 })
     username: string;
 

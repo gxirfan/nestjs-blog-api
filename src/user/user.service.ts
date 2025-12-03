@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, HttpException, HttpStatus, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './schemas/user.schema';
 import * as bcrypt from 'bcrypt';
@@ -138,6 +138,19 @@ export class UserService {
     async update(id: string, user: UpdateMeDto):Promise<UserDocument> {
         const updatedUser = await this.userModel.findByIdAndUpdate(id, user, { new: true }).exec();
         if (!updatedUser) throw new NotFoundException('User not found');
+        return updatedUser;
+    }
+
+    async updateUserMedia(userId: string, updatePayload: { avatar?: string, cover?: string }): Promise<UserDocument> {
+        
+        const updatedUser = await this.userModel.findByIdAndUpdate(
+            userId,
+            { $set: updatePayload }, 
+            { new: true }
+        ).exec();
+        
+        if (!updatedUser) throw new HttpException('User not found.', HttpStatus.NOT_FOUND);
+
         return updatedUser;
     }
 

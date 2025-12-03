@@ -64,6 +64,11 @@ export class PostsService {
             await this.topicService.updatePostCount(savedPost.topicId, count);
         }
 
+        if (savedPost && savedPost.parentId) {
+            await this.updateLastPostAt(savedPost.parentId);
+            await this.updatePostCount(savedPost.parentId);
+        }
+
         return savedPost;
     }
 
@@ -72,9 +77,7 @@ export class PostsService {
         
         const viewed = await this.cacheManager.get(cacheKey);
 
-        if (viewed) {
-            return;
-        }
+        if (viewed) return;
 
         this.postModel.findByIdAndUpdate(postId, { $inc: { viewCount: 1 } }).exec();
 
@@ -90,7 +93,7 @@ export class PostsService {
         
         const [posts, total] = await Promise.all([
             this.postModel.find({ topicId: { $in: activeTopicIds }, status: true })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
             .populate({ path: 'topicId', select: 'title slug tagId' })
             .populate({ path: 'parentId', select: 'title slug' })
             .sort({ createdAt: -1 })
@@ -112,7 +115,7 @@ export class PostsService {
         
         const [posts, total] = await Promise.all([
             this.postModel.find({ topicId: { $in: activeTopicIds }, status: true })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
             .populate({ path: 'topicId', select: 'title slug tagId' })
             .populate({ path: 'parentId', select: 'title slug' })
             .sort({ viewCount: -1 })
@@ -126,7 +129,7 @@ export class PostsService {
     }
 
     async findAll(): Promise<PostDocument[]> {
-        const posts = await this.postModel.find().populate({ path: 'userId', select: 'username role nickname firstName lastName email' }).populate({ path: 'topicId', select: 'title slug tagId' }).populate({ path: 'parentId', select: 'title slug' }).sort({ createdAt: -1 }).exec();
+        const posts = await this.postModel.find().populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' }).populate({ path: 'topicId', select: 'title slug tagId' }).populate({ path: 'parentId', select: 'title slug' }).sort({ createdAt: -1 }).exec();
 
         if (!posts) throw new NotFoundException('Posts not found');
 
@@ -138,7 +141,7 @@ export class PostsService {
     }
 
     async findAllByUserId(userId: string): Promise<PostDocument[]> {
-        const posts = await this.postModel.find({ userId }).populate({ path: 'userId', select: 'username role nickname firstName lastName email' }).populate({ path: 'topicId', select: 'title slug tagId' }).populate({ path: 'parentId', select: 'title slug' }).sort({ createdAt: -1 }).exec();
+        const posts = await this.postModel.find({ userId }).populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' }).populate({ path: 'topicId', select: 'title slug tagId' }).populate({ path: 'parentId', select: 'title slug' }).sort({ createdAt: -1 }).exec();
 
         if (!posts) throw new NotFoundException('Posts not found');
 
@@ -153,7 +156,7 @@ export class PostsService {
         
         const [posts, total] = await Promise.all([
             this.postModel.find({ userId, topicId: { $in: activeTopicIds }, status: true })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
             .populate({ path: 'topicId', select: 'title slug tagId' })
             .populate({ path: 'parentId', select: 'title slug' })
             .sort({ createdAt: -1 })
@@ -165,7 +168,29 @@ export class PostsService {
         return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
     }
 
+    async findAllByUsernamePaginated(username: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+        const { page, limit } = query;
+        const skip = (page - 1) * limit;
+        const activeTopics = await this.topicService.findStatusTrue();
+        const activeTopicIds = activeTopics.map(topic => topic.id);
 
+        const user = await this.userService.findOneByUsername(username);
+        if (!user) throw new NotFoundException('User not found');
+        
+        const [posts, total] = await Promise.all([
+            this.postModel.find({ userId: user.id, topicId: { $in: activeTopicIds }, status: true })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
+            .populate({ path: 'topicId', select: 'title slug tagId' })
+            .populate({ path: 'parentId', select: 'title slug' })
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
+            .exec(),
+            this.postModel.countDocuments({ userId: user.id, topicId: { $in: activeTopicIds }, status: true }).exec(), 
+        ]);
+        
+        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+    }
 
     async findAllByTopicIdPaginated(topicId: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
         const { page, limit } = query;
@@ -175,7 +200,7 @@ export class PostsService {
 
         const [posts, total] = await Promise.all([
             this.postModel.find({ topicId: { $in: activeTopicIds }, status: true, parentId: null })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
             .populate({ path: 'topicId', select: 'title slug tagId' })
             .populate({ path: 'parentId', select: 'title slug' })
             .sort({ createdAt: -1 })
@@ -195,7 +220,7 @@ export class PostsService {
         
         const [posts, total] = await Promise.all([
             this.postModel.find({ topicId: { $in: activeTopicIds }, parentId, status: true })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
             .populate({ path: 'topicId', select: 'title slug tagId' })
             .populate({ path: 'parentId', select: 'title slug' })
             .sort({ createdAt: -1 })
@@ -213,7 +238,7 @@ export class PostsService {
 
         const [posts, total] = await Promise.all([
             this.postModel.find({ userId })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email' })
+            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
             .populate({ path: 'topicId', select: 'title slug tagId' })
             .populate({ path: 'parentId', select: 'title slug' })
             .sort({ createdAt: -1 })
@@ -226,7 +251,7 @@ export class PostsService {
     }
 
     async findOne(id: string): Promise<PostDocument> {
-        const post = await this.postModel.findById(id).populate({ path: 'userId', select: 'username role nickname firstName lastName email' }).populate({ path: 'topicId', select: 'title slug tagId' }).populate({ path: 'parentId', select: 'title slug' }).sort({ createdAt: -1 }).exec();
+        const post = await this.postModel.findById(id).populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' }).populate({ path: 'topicId', select: 'title slug tagId' }).populate({ path: 'parentId', select: 'title slug' }).sort({ createdAt: -1 }).exec();
 
         if (!post) throw new NotFoundException('Post not found');
 
@@ -234,7 +259,7 @@ export class PostsService {
     }
 
     async findOneBySlug(userId: string, slug: string): Promise<PostDocument> {
-        const post = await this.postModel.findOne({ slug }).populate({ path: 'userId', select: 'username role nickname firstName lastName email' }).populate({ path: 'topicId', select: 'title slug tagId' }).populate({ path: 'parentId', select: 'title slug' }).sort({ createdAt: -1 }).exec();
+        const post = await this.postModel.findOne({ slug }).populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' }).populate({ path: 'topicId', select: 'title slug tagId' }).populate({ path: 'parentId', select: 'title slug' }).sort({ createdAt: -1 }).exec();
 
         if (!post) throw new NotFoundException('Post not found');
 

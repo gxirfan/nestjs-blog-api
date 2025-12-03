@@ -20,6 +20,8 @@ export class TagMapper {
                 userRole: userObject.role,
                 nickname: userObject.nickname,
                 author: userObject.firstName + ' ' + userObject.lastName,
+                authorUsername: userObject.username,
+                authorAvatar: userObject.avatar,
                 email: userObject.email,
 
                 createdAt: tagObject.createdAt.toISOString(),
