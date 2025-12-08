@@ -3,7 +3,7 @@ import { IAuditFields } from "src/common/interfaces/common.interface";
 export interface IUser extends IAuditFields {
     id: string;
     username: string;
-    nickname?: string;
+    nickname: string;
     firstName: string;
     lastName: string;
     bio?: string;

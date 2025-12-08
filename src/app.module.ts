@@ -16,6 +16,10 @@ import { ErrorsLoggingInterceptor } from './common/interceptors/error.logging.in
 import { AllExceptionsFilter } from './common/interceptors/all-exceptions.filter';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
+import { VoteModule } from './forum/vote/vote.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
+import { NotificationModule } from './notification/notification.module';
+
 @Module({
   imports: [
     CacheModule.register({
@@ -37,11 +41,16 @@ import { join } from 'path';
       rootPath: join(process.cwd(), 'public'), 
       serveRoot: '/', 
     }),
+    EventEmitterModule.forRoot({
+      global: true,
+    }),
+
     UserModule,
-    
+    NotificationModule,
     ForumModule,
     AuthModule,
     ContactModule,
+    VoteModule,
   ],
   controllers: [AppController],
   providers: [

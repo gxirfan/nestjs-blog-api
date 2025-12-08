@@ -11,23 +11,28 @@ import { TopicsService } from 'src/forum/topics/topics.service';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import * as cacheManager from 'cache-manager';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
+import { ReplyCreatedEvent } from 'src/notification/events/notification.events';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { IPaginationResponse } from 'src/common/interfaces/pagination-response.interface';
 
 @Injectable()
 export class PostsService {
-    constructor(@InjectModel(Post.name) private readonly postModel: Model<PostDocument>, private readonly userService: UserService, private readonly topicService: TopicsService, @Inject(CACHE_MANAGER) private cacheManager: cacheManager.Cache) {}
+    constructor(@InjectModel(Post.name) private readonly postModel: Model<PostDocument>, private readonly userService: UserService, private readonly topicService: TopicsService, @Inject(CACHE_MANAGER) private cacheManager: cacheManager.Cache, private eventEmitter: EventEmitter2) { }
 
     private async createUniqueSlug(title: string): Promise<string> {
-        
-        const baseSlug = slugify(title, { lower: true, strict: true });
+        let baseSlug = slugify(title, { lower: true, strict: true });
+
+        if (!baseSlug || baseSlug.trim() === '') baseSlug = 'censored-title';
+
         let slug = baseSlug;
 
         let existingPost = await this.postModel.exists({ slug }).exec();
 
         while (existingPost) {
-            const randomSuffix = Math.floor(Math.random() * 9000) + 1000; 
+            const randomSuffix = Math.floor(Math.random() * 9000) + 1000;
 
             slug = `${baseSlug}-${randomSuffix}`;
-            
+
             existingPost = await this.postModel.exists({ slug }).exec();
         }
 
@@ -51,7 +56,6 @@ export class PostsService {
 
         await this.topicService.updateLastPostAt(createPostDto.topicId);
 
-        
 
         const savedPost = await post.save();
 
@@ -69,12 +73,34 @@ export class PostsService {
             await this.updatePostCount(savedPost.parentId);
         }
 
+        if (createPostDto.parentId) {
+            const parentPost = await this.postModel.findById(createPostDto.parentId);
+            const replier = await this.userService.findOneById(userId);
+    
+            if (parentPost) {
+                 this.eventEmitter.emit(
+                    'post.reply',
+                    new ReplyCreatedEvent(
+                        parentPost.id,
+                        parentPost.title,
+                        parentPost.slug,
+                        savedPost.id,
+                        savedPost.slug,
+                        userId,
+                        replier.username,
+                        replier.nickname,
+                        parentPost.userId
+                    )
+                );
+            }
+        }
+
         return savedPost;
     }
 
     public async incrementViewCount(postId: string, clientIdentifier: string): Promise<void> {
         const cacheKey = `VIEWED_POST_${postId}_${clientIdentifier}`;
-        
+
         const viewed = await this.cacheManager.get(cacheKey);
 
         if (viewed) return;
@@ -84,48 +110,48 @@ export class PostsService {
         this.cacheManager.set(cacheKey, '1', 86400);
     }
 
-    async findAllPaginated(query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+    async findAllPaginated(query: PaginationQueryDto): Promise<IPaginationResponse<PostDocument>> {
         const { page, limit } = query;
         const skip = (page - 1) * limit;
 
         const activeTopics = await this.topicService.findStatusTrue();
         const activeTopicIds = activeTopics.map(topic => topic.id);
-        
+
         const [posts, total] = await Promise.all([
             this.postModel.find({ topicId: { $in: activeTopicIds }, status: true })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
-            .populate({ path: 'topicId', select: 'title slug tagId' })
-            .populate({ path: 'parentId', select: 'title slug' })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .exec(),
-            this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, status: true }).exec(), 
+                .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
+                .populate({ path: 'topicId', select: 'title slug tagId' })
+                .populate({ path: 'parentId', select: 'title slug' })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, status: true }).exec(),
         ]);
 
-        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
-    async findAllByViewCountPaginated(query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+    async findAllByViewCountPaginated(query: PaginationQueryDto): Promise<IPaginationResponse<PostDocument>> {
         const { page, limit } = query;
         const skip = (page - 1) * limit;
 
         const activeTopics = await this.topicService.findStatusTrue();
         const activeTopicIds = activeTopics.map(topic => topic.id);
-        
+
         const [posts, total] = await Promise.all([
             this.postModel.find({ topicId: { $in: activeTopicIds }, status: true })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
-            .populate({ path: 'topicId', select: 'title slug tagId' })
-            .populate({ path: 'parentId', select: 'title slug' })
-            .sort({ viewCount: -1 })
-            .skip(skip)
-            .limit(limit)
-            .exec(),
-            this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, status: true }).exec(), 
+                .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
+                .populate({ path: 'topicId', select: 'title slug tagId' })
+                .populate({ path: 'parentId', select: 'title slug' })
+                .sort({ viewCount: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, status: true }).exec(),
         ]);
 
-        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
     async findAll(): Promise<PostDocument[]> {
@@ -148,27 +174,27 @@ export class PostsService {
         return posts;
     }
 
-    async findAllByUserIdPaginated(userId: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+    async findAllByUserIdPaginated(userId: string, query: PaginationQueryDto): Promise<IPaginationResponse<PostDocument>> {
         const { page, limit } = query;
         const skip = (page - 1) * limit;
         const activeTopics = await this.topicService.findStatusTrue();
         const activeTopicIds = activeTopics.map(topic => topic.id);
-        
+
         const [posts, total] = await Promise.all([
             this.postModel.find({ userId, topicId: { $in: activeTopicIds }, status: true })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
-            .populate({ path: 'topicId', select: 'title slug tagId' })
-            .populate({ path: 'parentId', select: 'title slug' })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .exec(),
-            this.postModel.countDocuments({ userId, topicId: { $in: activeTopicIds }, status: true }).exec(), 
+                .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
+                .populate({ path: 'topicId', select: 'title slug tagId' })
+                .populate({ path: 'parentId', select: 'title slug' })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.postModel.countDocuments({ userId, topicId: { $in: activeTopicIds }, status: true }).exec(),
         ]);
-        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
-    async findAllByUsernamePaginated(username: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+    async findAllByUsernamePaginated(username: string, query: PaginationQueryDto): Promise<IPaginationResponse<PostDocument>> {
         const { page, limit } = query;
         const skip = (page - 1) * limit;
         const activeTopics = await this.topicService.findStatusTrue();
@@ -176,23 +202,23 @@ export class PostsService {
 
         const user = await this.userService.findOneByUsername(username);
         if (!user) throw new NotFoundException('User not found');
-        
+
         const [posts, total] = await Promise.all([
             this.postModel.find({ userId: user.id, topicId: { $in: activeTopicIds }, status: true })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
-            .populate({ path: 'topicId', select: 'title slug tagId' })
-            .populate({ path: 'parentId', select: 'title slug' })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .exec(),
-            this.postModel.countDocuments({ userId: user.id, topicId: { $in: activeTopicIds }, status: true }).exec(), 
+                .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
+                .populate({ path: 'topicId', select: 'title slug tagId' })
+                .populate({ path: 'parentId', select: 'title slug' })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.postModel.countDocuments({ userId: user.id, topicId: { $in: activeTopicIds }, status: true }).exec(),
         ]);
-        
-        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+
+        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
-    async findAllByTopicIdPaginated(topicId: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+    async findAllByTopicIdPaginated(topicId: string, query: PaginationQueryDto): Promise<IPaginationResponse<PostDocument>> {
         const { page, limit } = query;
         const skip = (page - 1) * limit;
         const activeTopics = await this.topicService.findStatusTrue();
@@ -200,54 +226,54 @@ export class PostsService {
 
         const [posts, total] = await Promise.all([
             this.postModel.find({ topicId: { $in: activeTopicIds }, status: true, parentId: null })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
-            .populate({ path: 'topicId', select: 'title slug tagId' })
-            .populate({ path: 'parentId', select: 'title slug' })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .exec(),
-            this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, status: true }).exec(), 
+                .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
+                .populate({ path: 'topicId', select: 'title slug tagId' })
+                .populate({ path: 'parentId', select: 'title slug' })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, status: true }).exec(),
         ]);
-        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
-    async findAllByParentIdPaginated(parentId: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+    async findAllByParentIdPaginated(parentId: string, query: PaginationQueryDto): Promise<IPaginationResponse<PostDocument>> {
         const { page, limit } = query;
         const skip = (page - 1) * limit;
         const activeTopics = await this.topicService.findStatusTrue();
         const activeTopicIds = activeTopics.map(topic => topic.id);
-        
+
         const [posts, total] = await Promise.all([
             this.postModel.find({ topicId: { $in: activeTopicIds }, parentId, status: true })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
-            .populate({ path: 'topicId', select: 'title slug tagId' })
-            .populate({ path: 'parentId', select: 'title slug' })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .exec(),
-            this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, parentId, status: true }).exec(), 
+                .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
+                .populate({ path: 'topicId', select: 'title slug tagId' })
+                .populate({ path: 'parentId', select: 'title slug' })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.postModel.countDocuments({ topicId: { $in: activeTopicIds }, parentId, status: true }).exec(),
         ]);
-        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
-    async findAllByUserIdForLibraryMyPostsPaginated(userId: string, query: PaginationQueryDto): Promise<{data: PostDocument[], meta: MetaDto}> {
+    async findAllByUserIdForLibraryMyPostsPaginated(userId: string, query: PaginationQueryDto): Promise<IPaginationResponse<PostDocument>> {
         const { page, limit } = query;
         const skip = (page - 1) * limit;
 
         const [posts, total] = await Promise.all([
             this.postModel.find({ userId })
-            .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
-            .populate({ path: 'topicId', select: 'title slug tagId' })
-            .populate({ path: 'parentId', select: 'title slug' })
-            .sort({ createdAt: -1 })
-            .skip(skip)
-            .limit(limit)
-            .exec(),
-            this.postModel.countDocuments({ userId }).exec(), 
+                .populate({ path: 'userId', select: 'username role nickname firstName lastName email avatar' })
+                .populate({ path: 'topicId', select: 'title slug tagId' })
+                .populate({ path: 'parentId', select: 'title slug' })
+                .sort({ createdAt: -1 })
+                .skip(skip)
+                .limit(limit)
+                .exec(),
+            this.postModel.countDocuments({ userId }).exec(),
         ]);
-        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
+        return { data: posts, meta: { total, page, limit, totalPages: Math.ceil(total / limit) } };
     }
 
     async findOne(id: string): Promise<PostDocument> {
@@ -304,6 +330,18 @@ export class PostsService {
         if (!updatedPost) throw new NotFoundException('Post update failed.');
 
         return updatedPost;
+    }
+
+    async updateTotalScores(postId: string, score: number, upvotes: number, downvotes: number): Promise<PostDocument> {
+        const post = await this.postModel.findById(postId).exec();
+
+        if (!post) throw new NotFoundException('Post not found');
+
+        post.score = score ? score : undefined;
+        post.upvotes = upvotes ? upvotes : undefined;
+        post.downvotes = downvotes ? downvotes : undefined;
+        
+        return post.save();
     }
 
     async updateOneByIdAsAdmin(id: string, updatePostDto: UpdatePostDto): Promise<PostDocument> {
