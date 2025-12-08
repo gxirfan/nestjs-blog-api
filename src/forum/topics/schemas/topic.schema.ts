@@ -41,10 +41,10 @@ export class Topic {
     viewCount: number;
 
     
-    @Prop({ required: true, type: Types.ObjectId, ref: User.name })
+    @Prop({ required: true, type: Types.ObjectId, ref: User.name, index: true })
     userId: Types.ObjectId; 
 
-    @Prop({ type: Types.ObjectId, ref: Tag.name })
+    @Prop({ type: Types.ObjectId, ref: Tag.name, index: true })
     tagId: Types.ObjectId;
 
     @Prop({ required: true, default: true })

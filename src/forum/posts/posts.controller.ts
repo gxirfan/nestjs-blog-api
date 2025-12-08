@@ -8,8 +8,9 @@ import { AuthenticatedGuard } from 'src/auth/guards/authenticated.guard';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 import { PostMapper } from './mappers/post.mapper';
 import { PostResponseDto } from './dto/post-response.dto';
-import { MetaDto } from 'src/common/dto/meta.dto';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
+import { CensorInterceptor } from 'src/common/censor/censor.interceptor';
+import { IPaginationResponse } from 'src/common/interfaces/pagination-response.interface';
 
 @UseInterceptors(TransformInterceptor)
 @Controller('posts')
@@ -17,6 +18,7 @@ export class PostsController {
     constructor(private readonly postsService: PostsService) {}
 
     @UseGuards(AuthenticatedGuard)
+    @UseInterceptors(CensorInterceptor)
     @Post()
     @ResponseMessage("Post created successfully.")
     async createPost(@Req() req, @Body() createPostDto: CreatePostDto): Promise<PostResponseDto> {
@@ -25,42 +27,42 @@ export class PostsController {
 
     @Get('all')
     @ResponseMessage("All posts fetched successfully.")
-    async findAllPaginated(@Query() query: PaginationQueryDto): Promise<{data: PostResponseDto[], meta: MetaDto}> {
+    async findAllPaginated(@Query() query: PaginationQueryDto): Promise<IPaginationResponse<PostResponseDto>> {
         const { data, meta } = await this.postsService.findAllPaginated(query);
         return { data: PostMapper.toResponseDto(data), meta };
     }
 
     @Get('all/view-count')
     @ResponseMessage("All posts fetched successfully.")
-    async findAllByViewCountPaginated(@Query() query: PaginationQueryDto): Promise<{data: PostResponseDto[], meta: MetaDto}> {
+    async findAllByViewCountPaginated(@Query() query: PaginationQueryDto): Promise<IPaginationResponse<PostResponseDto>> {
         const { data, meta } = await this.postsService.findAllByViewCountPaginated(query);
         return { data: PostMapper.toResponseDto(data), meta };
     }
 
     @Get('all/topic/:topicId')
     @ResponseMessage("All posts fetched successfully.")
-    async findAllByTopicIdPaginated(@Param('topicId') topicId: string, @Query() query: PaginationQueryDto): Promise<{data: PostResponseDto[], meta: MetaDto}> {
+    async findAllByTopicIdPaginated(@Param('topicId') topicId: string, @Query() query: PaginationQueryDto): Promise<IPaginationResponse<PostResponseDto>> {
         const { data, meta } = await this.postsService.findAllByTopicIdPaginated(topicId, query);
         return { data: PostMapper.toResponseDto(data), meta };
     }
 
     @Get('all/parent/:parentId')
     @ResponseMessage("All posts fetched successfully.")
-    async findAllByParentIdPaginated(@Param('parentId') parentId: string, @Query() query: PaginationQueryDto): Promise<{data: PostResponseDto[], meta: MetaDto}> {
+    async findAllByParentIdPaginated(@Param('parentId') parentId: string, @Query() query: PaginationQueryDto): Promise<IPaginationResponse<PostResponseDto>> {
         const { data, meta } = await this.postsService.findAllByParentIdPaginated(parentId, query);
         return { data: PostMapper.toResponseDto(data), meta };
     }
 
     @Get('all/username/:username')
     @ResponseMessage("All posts fetched successfully.")
-    async findAllByUsernamePaginated(@Param('username') username: string, @Query() query: PaginationQueryDto): Promise<{data: PostResponseDto[], meta: MetaDto}> {
+    async findAllByUsernamePaginated(@Param('username') username: string, @Query() query: PaginationQueryDto): Promise<IPaginationResponse<PostResponseDto>> {
         const { data, meta } = await this.postsService.findAllByUsernamePaginated(username, query);
         return { data: PostMapper.toResponseDto(data), meta };
     }
 
     @Get('all/user/:userId')
     @ResponseMessage("All posts fetched successfully.")
-    async findAllByUserIdPaginated(@Param('userId') userId: string, @Query() query: PaginationQueryDto): Promise<{data: PostResponseDto[], meta: MetaDto}> {
+    async findAllByUserIdPaginated(@Param('userId') userId: string, @Query() query: PaginationQueryDto): Promise<IPaginationResponse<PostResponseDto>> {
 
         const { data, meta } = await this.postsService.findAllByUserIdPaginated(userId, query);
         return { data: PostMapper.toResponseDto(data), meta };
@@ -68,7 +70,7 @@ export class PostsController {
 
     @Get('all/library/my-posts')
     @ResponseMessage("All posts fetched successfully.")
-    async findAllByUserIdForLibraryMyPostsPaginated(@Req() req, @Query() query: PaginationQueryDto): Promise<{data: PostResponseDto[], meta: MetaDto}> {
+    async findAllByUserIdForLibraryMyPostsPaginated(@Req() req, @Query() query: PaginationQueryDto): Promise<IPaginationResponse<PostResponseDto>> {
         const { data, meta } = await this.postsService.findAllByUserIdForLibraryMyPostsPaginated(req.user.id, query);
         return { data: PostMapper.toResponseDto(data), meta };
     }
@@ -95,6 +97,7 @@ export class PostsController {
     }
 
     @UseGuards(AuthenticatedGuard)
+    @UseInterceptors(CensorInterceptor)
     @Patch(':id')
     @ResponseMessage("Post updated successfully.")
     async update(@Param('id') id: string, @Req() req, @Body() updatePostDto: UpdatePostDto): Promise<PostResponseDto> {

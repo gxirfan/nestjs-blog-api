@@ -7,8 +7,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { UpdateTagDto } from './dto/update-tag.dto';
 import slugify from 'slugify';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
-import { MetaDto } from 'src/common/dto/meta.dto';
 import { UnauthorizedException } from '@nestjs/common';
+import { IPaginationResponse } from 'src/common/interfaces/pagination-response.interface';
 
 @Injectable()
 export class TagsService {
@@ -57,7 +57,7 @@ export class TagsService {
         return await this.tagSchema.find({ status: true }, {_id: 1}).exec();
     }
 
-    async findAllPaginated(query: PaginationQueryDto): Promise<{ data: TagDocument[], meta: MetaDto }> {
+    async findAllPaginated(query: PaginationQueryDto): Promise<IPaginationResponse<TagDocument>> {
         const { page, limit } = query;
         const skip = (page - 1) * limit;
 
@@ -74,7 +74,7 @@ export class TagsService {
         return { data: tags, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
     }
 
-    async findAllByUserIdPaginated(userId:string, query: PaginationQueryDto): Promise<{ data: TagDocument[], meta: MetaDto }> {
+    async findAllByUserIdPaginated(userId:string, query: PaginationQueryDto): Promise<IPaginationResponse<TagDocument>> {
         const { page, limit } = query;
         const skip = (page - 1) * limit;
 
@@ -91,7 +91,7 @@ export class TagsService {
         return { data: tags, meta: { total, page, limit, totalPages: Math.ceil(total / limit)} };
     }
 
-    async findAllByUserIdForLibraryMyTagsPaginated(userId:string, query: PaginationQueryDto): Promise<{ data: TagDocument[], meta: MetaDto }> {
+    async findAllByUserIdForLibraryMyTagsPaginated(userId:string, query: PaginationQueryDto): Promise<IPaginationResponse<TagDocument>> {
         const { page, limit } = query;
         const skip = (page - 1) * limit;
 

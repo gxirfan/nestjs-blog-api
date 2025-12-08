@@ -8,7 +8,8 @@ import { TopicMapper } from './mappers/topic.mapper';
 import { ResponseMessage } from 'src/common/decorators/response-message.decorator';
 import { UpdateTopicDto } from './dto/update-topic.dto';
 import { PaginationQueryDto } from 'src/common/dto/pagination-query.dto';
-import { MetaDto } from 'src/common/dto/meta.dto';
+import { CensorInterceptor } from 'src/common/censor/censor.interceptor';
+import { IPaginationResponse } from 'src/common/interfaces/pagination-response.interface';
 
 @UseInterceptors(TransformInterceptor)
 @Controller('topics')
@@ -16,6 +17,7 @@ export class TopicsController {
     constructor(private readonly topicsService: TopicsService) {}
 
     @UseGuards(AuthenticatedGuard)
+    @UseInterceptors(CensorInterceptor)
     @Post()
     async createTopic(@Req() req, @Body() createTopicDto: CreateTopicDto): Promise<TopicResponseDto> {
         return TopicMapper.toSingleResponseDto(await this.topicsService.createTopic(req.user.id, createTopicDto));
@@ -29,21 +31,21 @@ export class TopicsController {
 
     @Get('all')
     @ResponseMessage('Topics fetched successfully.')
-    async findAllPaginated(@Query() query: PaginationQueryDto): Promise<{ data: TopicResponseDto[], meta: MetaDto }> {
+    async findAllPaginated(@Query() query: PaginationQueryDto): Promise<IPaginationResponse<TopicResponseDto>> {
         const { data, meta } = await this.topicsService.findAllPaginated(query);
         return { data: TopicMapper.toResponseDto(data), meta };
     }
 
     @Get('all/:tagId')
     @ResponseMessage('Topics fetched successfully.')
-    async findAllByTagIdPaginated(@Param('tagId') tagId: string, @Query() query: PaginationQueryDto): Promise<{ data: TopicResponseDto[], meta: MetaDto }> {
+    async findAllByTagIdPaginated(@Param('tagId') tagId: string, @Query() query: PaginationQueryDto): Promise<IPaginationResponse<TopicResponseDto>> {
         const { data, meta } = await this.topicsService.findAllByTagIdPaginated(tagId, query);
         return { data: TopicMapper.toResponseDto(data), meta };
     }
 
     @Get('all/library/my-topics')
     @ResponseMessage('Topics fetched successfully.')
-    async findAllByUserIdForLibraryMyTopicsPaginated(@Req() req, @Query() query: PaginationQueryDto): Promise<{ data: TopicResponseDto[], meta: MetaDto }> {
+    async findAllByUserIdForLibraryMyTopicsPaginated(@Req() req, @Query() query: PaginationQueryDto): Promise<IPaginationResponse<TopicResponseDto>> {
         const { data, meta } = await this.topicsService.findAllByUserIdForLibraryMyTopicsPaginated(req.user.id, query);
         return { data: TopicMapper.toResponseDto(data), meta };
     }
@@ -64,6 +66,7 @@ export class TopicsController {
     }
 
     @UseGuards(AuthenticatedGuard)
+    @UseInterceptors(CensorInterceptor)
     @Patch(':id')
     @ResponseMessage('Topic updated successfully.')
     async updateOneById(@Req() req, @Param('id') id: string, @Body() updateTopicDto: UpdateTopicDto): Promise<TopicResponseDto> {

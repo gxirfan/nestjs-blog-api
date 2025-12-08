@@ -10,4 +10,7 @@ export interface IPost extends IAuditFields{
     viewCount: number;
     status: boolean;
     parentId: string | null;
+    upvotes?: number;
+    downvotes?: number;
+    score?: number;
 }

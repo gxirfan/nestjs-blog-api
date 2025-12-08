@@ -5,6 +5,8 @@ export class PostResponseDto implements IAuditFields{
     title: string;
     slug: string;
     content: string;
+    score: number;
+
     userId: string;
     author: string;
     authorNickname: string;

@@ -25,19 +25,19 @@ export class Post {
     @Prop({ required: true, trim: true })
     title: string;
 
-    @Prop({ required: true, trim: true })
+    @Prop({ required: true, trim: true, unique: true, index: true })
     slug: string;
     
     @Prop({ required: true, trim: true })
     content: string;
     
-    @Prop({ required: true, type: Types.ObjectId, ref: User.name })
+    @Prop({ required: true, type: Types.ObjectId, ref: User.name, index: true })
     userId: Types.ObjectId;
     
-    @Prop({ required: true, type: Types.ObjectId, ref: Topic.name })
+    @Prop({ required: true, type: Types.ObjectId, ref: Topic.name, index: true })
     topicId: Types.ObjectId;
     
-    @Prop({ required: false, type: Types.ObjectId, ref: Post.name, default: null })
+    @Prop({ required: false, type: Types.ObjectId, ref: Post.name, default: null, index: true })
     parentId: Types.ObjectId | null;
 
     @Prop({ required: false, type: Number, default: 0 })
@@ -51,6 +51,13 @@ export class Post {
 
     @Prop({ required: true, default: true })
     status: boolean;
+
+    @Prop({ type: Number, default: 0 })
+    score: number;
+    @Prop({ type: Number, default: 0 })
+    upvotes: number;
+    @Prop({ type: Number, default: 0 })
+    downvotes: number;
 }
     
 export const PostSchema = SchemaFactory.createForClass(Post);

@@ -6,12 +6,11 @@ export class TagResponseDto implements IAuditFields {
     description: string;
     slug: string;
     userId: string;
-    username: string;
-    nickname: string;
+    authorNickname: string;
     author: string;
     authorAvatar: string;
     authorUsername: string;
-    userRole: string;
+    authorRole: string;
     email: string;
     status: boolean;
     createdAt: Date;

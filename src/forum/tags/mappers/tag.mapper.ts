@@ -16,9 +16,8 @@ export class TagMapper {
                 slug: tagObject.slug,
                 
                 userId: userObject.id,
-                username: userObject.username,
-                userRole: userObject.role,
-                nickname: userObject.nickname,
+                authorRole: userObject.role,
+                authorNickname: userObject.nickname,
                 author: userObject.firstName + ' ' + userObject.lastName,
                 authorUsername: userObject.username,
                 authorAvatar: userObject.avatar,

@@ -28,10 +28,10 @@ export class Tag {
     @Prop({ required: true, trim: true })
     description: string;
 
-    @Prop({ required: true, trim: true })
+    @Prop({ required: true, trim: true, unique: true, index: true })
     slug: string;
 
-    @Prop({ required: true, trim: true, type: Types.ObjectId, ref: User.name })
+    @Prop({ required: true, trim: true, type: Types.ObjectId, ref: User.name, index: true })
     userId: Types.ObjectId;
 
     @Prop({ required: true, default: false })

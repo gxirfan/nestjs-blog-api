@@ -16,6 +16,8 @@ export class PostMapper {
                 title: postObject.title,
                 slug: postObject.slug,
                 content: postObject.content,
+                score: postObject.score,
+
                 userId: userObject.id,
                 author: userObject.firstName + ' ' + userObject.lastName,
                 authorNickname: userObject.nickname,
