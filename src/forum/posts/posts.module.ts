@@ -5,6 +5,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { Post, PostSchema } from './schemas/post.schema';
 import { UserModule } from 'src/user/user.module';
 import { TopicsModule } from 'src/forum/topics/topics.module';
+import { CensorModule } from 'src/common/censor/censor.module';
 
 @Module({
   providers: [PostsService],
@@ -12,7 +13,8 @@ import { TopicsModule } from 'src/forum/topics/topics.module';
   imports: [
     MongooseModule.forFeature([{ name: Post.name, schema: PostSchema }]),
     UserModule,
-    TopicsModule
+    TopicsModule,
+    CensorModule
   ],
   exports: [PostsService],
 })
